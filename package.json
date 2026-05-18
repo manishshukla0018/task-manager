@@ -1,0 +1,22 @@
+{
+  "name": "team-task-manager",
+  "version": "1.0.0",
+  "description": "Production-ready team task management application",
+  "private": true,
+  "scripts": {
+    "setup": "npm install && cd backend && npm install && cd ../frontend && npm install",
+    "install:all": "npm run setup",
+    "dev": "node scripts/dev.cjs",
+    "dev:backend": "cd backend && npm run dev",
+    "dev:frontend": "cd frontend && npm run dev",
+    "build": "cd frontend && npm install && npm run build",
+    "start": "cd backend && npm start",
+    "postinstall": "cd backend && npm install"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

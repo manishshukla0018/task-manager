@@ -17,6 +17,7 @@ connectDB();
 
 app.use(morgan(env.isProduction ? 'combined' : 'dev'));
 app.use(corsMiddleware);
+app.options("*", corsMiddleware);
 app.use(express.json());
 app.use(cookieParser());
 

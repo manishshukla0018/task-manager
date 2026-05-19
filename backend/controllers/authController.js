@@ -21,19 +21,25 @@ const clearTokenCookie = (req, res) => {
 
 export const signup = asyncHandler(async (req, res) => {
   const user = await authService.register(req.body);
+
   const token = issueAuth(req, res, user._id);
+
   res.status(201).json({
     success: true,
-    data: { ...authService.formatUser(user), token },
+    token,
+    user: authService.formatUser(user),
   });
 });
 
 export const login = asyncHandler(async (req, res) => {
   const user = await authService.login(req.body);
+
   const token = issueAuth(req, res, user._id);
+
   res.json({
     success: true,
-    data: { ...authService.formatUser(user), token },
+    token,
+    user: authService.formatUser(user),
   });
 });
 

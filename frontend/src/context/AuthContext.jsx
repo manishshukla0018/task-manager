@@ -24,18 +24,29 @@ export const AuthProvider = ({ children }) => {
     fetchUser();
   }, [fetchUser]);
 
-  const persistSession = (payload) => {
-    const { token, ...rest } = payload || {};
-    if (token) setStoredToken(token);
-    setUser(rest);
-    return rest;
+ const persistSession = (payload) => {
+  if (payload?.token) {
+    setStoredToken(payload.token);
+  }
+
+  const userData = {
+    _id: payload._id,
+    name: payload.name,
+    email: payload.email,
+    role: payload.role,
   };
+
+  setUser(userData);
+
+  return userData;
+};
 
   const login = async (email, password) => {
     const { data } = await authService.login(email, password);
 
      console.log("LOGIN RESPONSE:", data);
-     
+     console.log("TOKEN:", data.data.token);
+
     return persistSession(data.data);
   };
 

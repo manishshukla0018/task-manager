@@ -38,8 +38,10 @@ export const login = asyncHandler(async (req, res) => {
 
   res.json({
     success: true,
-    token,
-    user: authService.formatUser(user),
+    data: {
+      ...authService.formatUser(user),
+      token,
+    },
   });
 });
 

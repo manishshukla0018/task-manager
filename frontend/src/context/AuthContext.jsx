@@ -41,18 +41,32 @@ export const AuthProvider = ({ children }) => {
   return userData;
 };
 
-  const login = async (email, password) => {
-  const { data } = await authService.login(email, password);
+const login = async (email, password) => {
+  const response = await authService.login(email, password);
 
-  console.log("LOGIN RESPONSE:", data);
+  console.log("LOGIN RESPONSE:", response.data);
 
-  setStoredToken(data.token);
+  // token is inside data object
+  const token = response.data.data.token;
 
-  setUser(data.user);
+  console.log("TOKEN:", token);
 
-  return data.user;
+  if (token) {
+    localStorage.setItem('ttmToken', token);
+  }
+
+  setUser({
+    _id: response.data.data._id,
+    name: response.data.data.name,
+    email: response.data.data.email,
+    role: response.data.data.role,
+  });
+
+  return response.data.data;
 };
 
+  return response.data.data;
+};
  const signup = async (formData) => {
   const { data } = await authService.signup(formData);
 

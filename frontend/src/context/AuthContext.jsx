@@ -42,18 +42,26 @@ export const AuthProvider = ({ children }) => {
 };
 
   const login = async (email, password) => {
-    const { data } = await authService.login(email, password);
+  const { data } = await authService.login(email, password);
 
-     console.log("LOGIN RESPONSE:", data);
-     console.log("TOKEN:", data.data.token);
+  console.log("LOGIN RESPONSE:", data);
 
-    return persistSession(data.data);
-  };
+  setStoredToken(data.token);
 
-  const signup = async (formData) => {
-    const { data } = await authService.signup(formData);
-    return persistSession(data.data);
-  };
+  setUser(data.user);
+
+  return data.user;
+};
+
+ const signup = async (formData) => {
+  const { data } = await authService.signup(formData);
+
+  setStoredToken(data.token);
+
+  setUser(data.user);
+
+  return data.user;
+};
 
   const logout = async () => {
     try {

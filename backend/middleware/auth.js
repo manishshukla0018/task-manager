@@ -4,8 +4,15 @@ import User from '../models/User.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { AppError } from '../utils/AppError.js';
 
+function readToken(req) {
+  if (req.cookies?.token) return req.cookies.token;
+  const h = req.headers.authorization;
+  if (h?.startsWith('Bearer ')) return h.slice(7).trim();
+  return null;
+}
+
 export const protect = asyncHandler(async (req, res, next) => {
-  const token = req.cookies?.token;
+  const token = readToken(req);
   if (!token) throw new AppError('Not authorized. Please log in.', 401);
 
   try {

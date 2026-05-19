@@ -17,9 +17,9 @@ connectDB();
 
 app.use(morgan(env.isProduction ? 'combined' : 'dev'));
 app.use(corsMiddleware);
-app.options("*", corsMiddleware);
-app.use(express.json());
+app.options('*', corsMiddleware);
 app.use(cookieParser());
+app.use(express.json());
 
 app.get('/api/health', (_req, res) => {
   res.json({ success: true, message: 'Team Task Manager API is running' });

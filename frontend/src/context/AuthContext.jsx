@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { authService } from '../services/authService';
+import { setStoredToken, clearStoredToken } from '../utils/authStorage';
 
 const AuthContext = createContext(null);
 
@@ -13,6 +14,7 @@ export const AuthProvider = ({ children }) => {
       setUser(data.data);
     } catch {
       setUser(null);
+      clearStoredToken();
     } finally {
       setLoading(false);
     }
@@ -22,21 +24,33 @@ export const AuthProvider = ({ children }) => {
     fetchUser();
   }, [fetchUser]);
 
+  const persistSession = (payload) => {
+    const { token, ...rest } = payload || {};
+    if (token) setStoredToken(token);
+    setUser(rest);
+    return rest;
+  };
+
   const login = async (email, password) => {
     const { data } = await authService.login(email, password);
-    setUser(data.data);
-    return data.data;
+
+     console.log("LOGIN RESPONSE:", data);
+     
+    return persistSession(data.data);
   };
 
   const signup = async (formData) => {
     const { data } = await authService.signup(formData);
-    setUser(data.data);
-    return data.data;
+    return persistSession(data.data);
   };
 
   const logout = async () => {
-    await authService.logout();
-    setUser(null);
+    try {
+      await authService.logout();
+    } finally {
+      clearStoredToken();
+      setUser(null);
+    }
   };
 
   return (

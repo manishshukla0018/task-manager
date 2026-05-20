@@ -97,8 +97,14 @@ export const updateTaskStatus = async (req, res) => {
       return res.status(404).json({ message: 'Task not found' });
     }
 
-    // Check authorization: Admin or Assigned User
-    if (req.user.role !== 'Admin' && (!task.assigneeId || task.assigneeId.toString() !== req.user._id.toString())) {
+    const project = await Project.findById(task.projectId);
+
+    // Check authorization: Admin, Assigned User, Task Creator, or Project Member
+    const isAssignee = task.assigneeId && task.assigneeId.toString() === req.user._id.toString();
+    const isCreator = task.createdBy && task.createdBy.toString() === req.user._id.toString();
+    const isProjectMember = project && project.members.includes(req.user._id);
+
+    if (req.user.role !== 'Admin' && !isAssignee && !isCreator && !isProjectMember) {
        return res.status(403).json({ message: 'Not authorized to update this task' });
     }
 

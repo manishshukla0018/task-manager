@@ -1,85 +1,105 @@
-import toast from 'react-hot-toast';
-import LoadingSpinner from '../components/LoadingSpinner';
-import StatCard from '../components/StatCard';
-import TaskTable from '../components/TaskTable';
-import { useDashboard } from '../hooks/useDashboard';
-import { useAuth } from '../hooks/useAuth';
+import { useEffect, useState } from 'react';
+import api from '../api/axios';
+import { CheckCircle2, Clock, AlertCircle, ListTodo } from 'lucide-react';
 
-export default function Dashboard() {
-  const { user, isAdmin } = useAuth();
-  const { stats, loading, updateTaskStatus } = useDashboard();
+const Dashboard = () => {
+  const [stats, setStats] = useState({ total: 0, done: 0, inProgress: 0, overdue: 0 });
+  const [recentTasks, setRecentTasks] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const handleStatusChange = async (taskId, status) => {
-    try {
-      await updateTaskStatus(taskId, status);
-      toast.success('Status updated');
-    } catch (err) {
-      toast.error(err.message || 'Failed to update status');
-    }
-  };
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        const { data } = await api.get('/tasks');
+        
+        let done = 0;
+        let inProgress = 0;
+        let overdue = 0;
+        const now = new Date();
 
-  if (loading) {
-    return (
-      <div className="flex justify-center py-20">
-        <LoadingSpinner size="lg" />
-      </div>
-    );
-  }
+        data.forEach(task => {
+          if (task.status === 'Done') done++;
+          if (task.status === 'In Progress') inProgress++;
+          if (task.dueDate && new Date(task.dueDate) < now && task.status !== 'Done') overdue++;
+        });
+
+        setStats({ total: data.length, done, inProgress, overdue });
+        setRecentTasks(data.slice(0, 5)); // Get 5 most recent
+      } catch (error) {
+        console.error('Failed to fetch dashboard data', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, []);
+
+  if (loading) return <div className="p-8 text-center text-gray-500">Loading dashboard...</div>;
+
+  const statCards = [
+    { title: 'Total Tasks', value: stats.total, icon: ListTodo, color: 'text-blue-600', bg: 'bg-blue-100' },
+    { title: 'In Progress', value: stats.inProgress, icon: Clock, color: 'text-yellow-600', bg: 'bg-yellow-100' },
+    { title: 'Completed', value: stats.done, icon: CheckCircle2, color: 'text-green-600', bg: 'bg-green-100' },
+    { title: 'Overdue', value: stats.overdue, icon: AlertCircle, color: 'text-red-600', bg: 'bg-red-100' },
+  ];
 
   return (
-    <div className="space-y-8 pb-20 lg:pb-0">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-        <p className="text-gray-500 mt-1">Overview of your team&apos;s tasks</p>
+    <div className="space-y-6">
+      <h1 className="text-2xl font-semibold text-gray-900">Dashboard</h1>
+      
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        {statCards.map((card) => {
+          const Icon = card.icon;
+          return (
+            <div key={card.title} className="bg-white overflow-hidden shadow rounded-lg">
+              <div className="p-5 flex items-center">
+                <div className={`flex-shrink-0 rounded-md p-3 ${card.bg}`}>
+                  <Icon className={`h-6 w-6 ${card.color}`} />
+                </div>
+                <div className="ml-5 w-0 flex-1">
+                  <dt className="text-sm font-medium text-gray-500 truncate">{card.title}</dt>
+                  <dd className="text-2xl font-semibold text-gray-900">{card.value}</dd>
+                </div>
+              </div>
+            </div>
+          );
+        })}
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard title="Total Tasks" value={stats?.total ?? 0} color="blue" icon={<TaskIcon />} />
-        <StatCard title="Completed" value={stats?.completed ?? 0} color="green" icon={<CheckIcon />} />
-        <StatCard title="In Progress" value={stats?.inProgress ?? 0} color="yellow" icon={<ClockIcon />} />
-        <StatCard title="Overdue" value={stats?.overdue ?? 0} color="red" icon={<AlertIcon />} />
+      <div className="bg-white shadow rounded-lg mt-8">
+        <div className="px-4 py-5 border-b border-gray-200 sm:px-6">
+          <h3 className="text-lg leading-6 font-medium text-gray-900">Recent Tasks</h3>
+        </div>
+        <ul className="divide-y divide-gray-200">
+          {recentTasks.length === 0 ? (
+            <li className="px-4 py-8 text-center text-gray-500">No tasks found. Create a project and add some tasks!</li>
+          ) : (
+            recentTasks.map((task) => (
+              <li key={task._id} className="px-4 py-4 flex items-center justify-between sm:px-6">
+                <div>
+                  <p className="text-sm font-medium text-brand-600 truncate">{task.title}</p>
+                  <p className="text-sm text-gray-500">{task.projectId?.name || 'Unknown Project'}</p>
+                </div>
+                <div className="flex flex-col items-end">
+                   <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                     ${task.status === 'Done' ? 'bg-green-100 text-green-800' : 
+                       task.status === 'In Progress' ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800'}`}>
+                     {task.status}
+                   </span>
+                   {task.dueDate && (
+                     <span className={`text-xs mt-1 ${new Date(task.dueDate) < new Date() && task.status !== 'Done' ? 'text-red-500 font-bold' : 'text-gray-500'}`}>
+                       Due: {new Date(task.dueDate).toLocaleDateString()}
+                     </span>
+                   )}
+                </div>
+              </li>
+            ))
+          )}
+        </ul>
       </div>
-
-      <section>
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Recent Tasks</h2>
-        <TaskTable
-          tasks={stats?.recentTasks}
-          user={user}
-          isGlobalAdmin={isAdmin}
-          onStatusChange={handleStatusChange}
-          showProject
-          emptyMessage="No tasks yet. Create a project and add tasks to get started."
-        />
-      </section>
     </div>
   );
-}
+};
 
-function TaskIcon() {
-  return (
-    <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-    </svg>
-  );
-}
-function CheckIcon() {
-  return (
-    <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-    </svg>
-  );
-}
-function ClockIcon() {
-  return (
-    <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-    </svg>
-  );
-}
-function AlertIcon() {
-  return (
-    <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-    </svg>
-  );
-}
+export default Dashboard;

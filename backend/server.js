@@ -17,7 +17,19 @@ const app = express();
 app.use(express.json());
 app.use(cookieParser());
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    // Allow any localhost, any vercel.app domain, and the specific FRONTEND_URL if set
+    const allowed = !origin || 
+                   origin.includes('localhost') || 
+                   origin.includes('vercel.app') || 
+                   origin === process.env.FRONTEND_URL;
+    if (allowed) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true, // Allow sending httpOnly cookies
 }));
 
